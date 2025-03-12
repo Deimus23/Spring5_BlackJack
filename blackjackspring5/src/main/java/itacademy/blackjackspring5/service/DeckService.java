@@ -1,12 +1,12 @@
-package com.blackjack.service;
-
+package itacademy.blackjackspring5.service;
 
 import itacademy.blackjackspring5.model.mongodb.enums.Rank;
 import itacademy.blackjackspring5.model.mongodb.enums.Suit;
+import itacademy.blackjackspring5.model.mongodb.Card;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
-import javax.smartcardio.Card;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,10 +21,11 @@ public class DeckService {
     }
 
     private List<Card> createFullDeck() {
-        return Flux.fromArray(Suit.values())
-                .flatMap(suit -> Flux.fromArray(Rank.values())
-                        .map(rank -> new Card(suit, rank))
-                        .collect(Collectors.toList())
-                        .block(); // Solo en inicialización, no bloquea durante el juego
+        return Arrays.stream(Suit.values())
+                .flatMap(suit ->
+                        Arrays.stream(Rank.values())
+                                .map(rank -> new Card(suit, rank))
+                )
+                .collect(Collectors.toList());
     }
 }
