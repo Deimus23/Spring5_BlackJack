@@ -27,6 +27,9 @@ public class Game {
     private String id;
     private String playerId;
     private List<Card> cards;
+    private List<Card> playerHand;
+    private List<Card> croupierHand;
+    private int playerScore;
     private GameStatus status;
     private GameResult result;
     private Date timestamp= Date.from(Instant.now());

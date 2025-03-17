@@ -17,5 +17,6 @@ public class Player {
     private int gamesPlayed;
     private int gamesWon;
     private int rankingPoints;
+
 }
 
