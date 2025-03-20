@@ -104,7 +104,7 @@ public class GameService {
         game.setStatus(GameStatus.COMPLETED);
         game.setResult(result);
         playerService.updatePlayerStats(game.getPlayerId(), result == GameResult.WIN)
-                .subscribe(); // Ejecución en segundo plano
+                .subscribe();
     }
 
     private List<String> drawInitialCards(List<Card> deck) {

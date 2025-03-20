@@ -1,5 +1,6 @@
 package itacademy.blackjackspring5.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import itacademy.blackjackspring5.model.mongodb.Game;
 import itacademy.blackjackspring5.service.GameService;
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,8 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import reactor.core.publisher.Mono;
+
+import java.util.Map;
 
 public class GameController {
     @RestController
@@ -115,8 +118,7 @@ public class GameController {
             return gameService.getGame(id)
                     .flatMap(game -> Mono.just(Map.of(
                             "remaining_cards":game.getDeck().size(),
-                    "cards":game.getDeck()
-            )));
+                    "cards":game.getDeck())));
         }
     }
 }
