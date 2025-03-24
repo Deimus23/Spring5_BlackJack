@@ -4,7 +4,8 @@ public enum Suit {
     HEARTS("♥"),
     DIAMONDS("♦"),
     CLUBS("♣"),
-    SPADES("♠");
+    SPADES("♠"),
+    HIDDEN("?");
 
     private final String symbol;
     Suit(String symbol) {

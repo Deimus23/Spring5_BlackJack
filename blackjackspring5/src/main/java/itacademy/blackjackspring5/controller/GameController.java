@@ -1,8 +1,10 @@
 package itacademy.blackjackspring5.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import itacademy.blackjackspring5.model.mongodb.Card;
 import itacademy.blackjackspring5.model.mongodb.Game;
 import itacademy.blackjackspring5.service.GameService;
+import itacademy.blackjackspring5.util.DeckUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,9 +13,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import reactor.core.publisher.Mono;
 
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-public class GameController {
     @RestController
     @RequestMapping("/games")
     @Tag (name = "Game Controller", description = "Gestión de partidas de Blackjack")
@@ -115,10 +118,21 @@ public class GameController {
         public Mono<Map<String, Object>> getDeck(
                 @Parameter(description = "ID de la partida", required = true)
                 @PathVariable String id) {
+
             return gameService.getGame(id)
-                    .flatMap(game -> Mono.just(Map.of(
-                            "remaining_cards":game.getDeck().size(),
-                    "cards":game.getDeck())));
+                    .flatMap(game -> {
+                        List<Card> deck = DeckUtils.deserializeDeck(game.getDeck());
+                        Map<String, Object> response = new LinkedHashMap<>();
+                        response.put("remaining_cards", deck.size());
+                        List<String> formattedCards = deck.stream()
+                                .map(Card::toString)
+                                .toList();
+                        response.put("cards", formattedCards);
+                        return Mono.just(response);
+                    })
+                    .onErrorResume(IllegalArgumentException.class, e ->
+                            Mono.just(Map.of("error", e.getMessage()))
+                    );
         }
     }
-}
+

@@ -1,5 +1,7 @@
 package itacademy.blackjackspring5.model.mongodb;
 
+import itacademy.blackjackspring5.model.mongodb.enums.GameResult;
+import itacademy.blackjackspring5.model.mongodb.enums.GameStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,21 +16,14 @@ import java.util.List;
 @AllArgsConstructor
 @Document(collection= "games")
 public class Game {
-    public enum GameStatus{
-        IN_PROGRES,
-        FINISHED
-    }
-    public enum GameResult{
-        WIN,
-        LOSSE,
-        DRAW
-    }
+
+
     @Id
     private String id;
     private String playerId;
-    private List<Card> cards;
+    private List<Card> deck;
     private List<Card> playerHand;
-    private List<Card> croupierHand;
+    private List<Card> dealerHand;
     private int playerScore;
     private GameStatus status;
     private GameResult result;

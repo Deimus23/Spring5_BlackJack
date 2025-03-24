@@ -12,6 +12,18 @@ public class Card {
     private Suit suit;
     private Rank rank;
 
+    public Suit getSuit() {
+        return suit;
+    }
+
+    public Rank getRank() {
+        return rank;
+    }
+
+    public String toSplitString() {
+        return this.rank.name() + "-" + this.suit.name();
+    }
+
     public Card(Suit suit, Rank rank) {
         this.suit = suit;
         this.rank = rank;

@@ -22,7 +22,7 @@ public class PlayerService {
                 })
                 .switchIfEmpty(
                         playerRepository.save(new Player(null, name, 0, 0, 0))
-                                .onErrorMap(e -> new RuntimeException("Error al crear/actualizar jugador", e));
+                                .onErrorMap(e -> new RuntimeException("Error al crear/actualizar jugador", e)));
     }
 
     public Mono<Player> updatePlayerName(Long id, String newName) {

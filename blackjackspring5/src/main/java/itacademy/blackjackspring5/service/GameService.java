@@ -1,18 +1,21 @@
 package itacademy.blackjackspring5.service;
 
-
-import itacademy.blackjackspring5.model.enums.GameResult;
-import itacademy.blackjackspring5.model.enums.GameStatus;
-import itacademy.blackjackspring5.model.mongodb.Card;
 import itacademy.blackjackspring5.model.mongodb.Game;
+import itacademy.blackjackspring5.model.mongodb.enums.GameStatus;
+import itacademy.blackjackspring5.model.mongodb.Card;
+import itacademy.blackjackspring5.model.mongodb.enums.GameResult;
+import itacademy.blackjackspring5.model.mongodb.enums.Suit;
 import itacademy.blackjackspring5.model.mongodb.enums.Rank;
 import itacademy.blackjackspring5.repository.mongodb.GameRepository;
 import itacademy.blackjackspring5.util.DeckUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import static itacademy.blackjackspring5.model.mongodb.enums.Suit.HIDDEN;
 
 @Service
 @RequiredArgsConstructor
@@ -24,19 +27,17 @@ public class GameService {
     public Mono<Game> createGame(String playerName) {
         return playerService.createOrUpdatePlayer(playerName)
                 .flatMap(player -> {
-                    List<Card> deck = DeckUtils.createNewShuffledDeck();
+                    List<Card> deck = DeckUtils.createShuffledDeck();
                     Game game = new Game();
                     game.setPlayerId(player.getName());
 
-                    // Repartir cartas iniciales
                     game.setPlayerHand(drawInitialCards(deck));
                     game.setDealerHand(drawDealerInitialCards(deck));
                     game.setDeck(DeckUtils.serializeDeck(deck));
                     game.setPlayerScore(calculateHandValue(game.getPlayerHand()));
 
-                    // Verificar blackjack natural
                     if (game.getPlayerScore() == 21) {
-                        game.setStatus(GameStatus.COMPLETED);
+                        game.setStatus(GameStatus.FINISHED);
                         game.setResult(GameResult.WIN);
                         playerService.updatePlayerStats(player.getName(), true);
                     }
@@ -48,7 +49,7 @@ public class GameService {
     public Mono<Game> hit(String gameId) {
         return gameRepository.findById(gameId)
                 .flatMap(game -> {
-                    if (game.getStatus() == GameStatus.COMPLETED) {
+                    if (game.getStatus() == GameStatus.FINISHED) {
                         return Mono.error(new IllegalStateException("La partida ya ha terminado"));
                     }
 
@@ -58,8 +59,8 @@ public class GameService {
                     }
 
                     Card drawnCard = deck.remove(0);
-                    List<String> newHand = new ArrayList<>(game.getPlayerHand());
-                    newHand.add(drawnCard.toString());
+                    List<Card> newHand = new ArrayList<>(game.getPlayerHand());
+                    newHand.add(drawnCard);
 
                     game.setPlayerHand(newHand);
                     game.setPlayerScore(calculateHandValue(newHand));
@@ -77,14 +78,13 @@ public class GameService {
         return gameRepository.findById(gameId)
                 .flatMap(game -> {
                     List<Card> deck = DeckUtils.deserializeDeck(game.getDeck());
-                    List<String> dealerHand = new ArrayList<>(game.getDealerHand());
+                    List<Card> dealerHand = new ArrayList<>(game.getDealerHand());
 
-                    // Revelar carta oculta
-                    dealerHand.set(1, deck.remove(0).toString());
+                    // Revelar la carta oculta (sustituye la "HIDDEN" por una real)
+                    dealerHand.set(1, deck.remove(0));
 
-                    // Lógica del dealer
                     while (calculateHandValue(dealerHand) < 17 && !deck.isEmpty()) {
-                        dealerHand.add(deck.remove(0).toString());
+                        dealerHand.add(deck.remove(0));
                     }
 
                     game.setDealerHand(dealerHand);
@@ -101,34 +101,34 @@ public class GameService {
     }
 
     private void endGame(Game game, GameResult result) {
-        game.setStatus(GameStatus.COMPLETED);
+        game.setStatus(GameStatus.FINISHED);
         game.setResult(result);
         playerService.updatePlayerStats(game.getPlayerId(), result == GameResult.WIN)
                 .subscribe();
     }
 
-    private List<String> drawInitialCards(List<Card> deck) {
+    private List<Card> drawInitialCards(List<Card> deck) {
         return List.of(
-                deck.remove(0).toString(),
-                deck.remove(0).toString()
+                deck.remove(0),
+                deck.remove(0)
         );
     }
 
-    private List<String> drawDealerInitialCards(List<Card> deck) {
-        return List.of(
-                deck.remove(0).toString(),
-                "HIDDEN"
-        );
+    private List<Card> drawDealerInitialCards(List<Card> deck) {
+        List<Card> dealerHand = new ArrayList<>();
+        dealerHand.add(deck.remove(0));
+        dealerHand.add(new Card(Suit.HIDDEN,Rank.HIDDEN));
+        return dealerHand;
     }
 
-    private int calculateHandValue(List<String> hand) {
+    private int calculateHandValue(List<Card> hand) {
         int total = 0;
         int aces = 0;
 
-        for (String card : hand) {
-            if (card.equals("HIDDEN")) continue;
+        for (Card card : hand) {
+            if (card.getRank().equals("HIDDEN")) continue;
 
-            String rank = card.split("-")[0];
+            String rank = String.valueOf(card.getRank());
             int value = Rank.valueOf(rank).getValue();
             total += value;
             if (rank.equals("ACE")) aces++;
@@ -147,5 +147,16 @@ public class GameService {
         if (playerScore > dealerScore) return GameResult.WIN;
         if (playerScore < dealerScore) return GameResult.LOSE;
         return GameResult.DRAW;
+    }
+
+    public Mono<Game> getGame(String gameId) {
+        return gameRepository.findById(gameId)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Juego no encontrado con ID: " + gameId)));
+    }
+
+    public Mono<Void> deleteGame(String gameId) {
+        return gameRepository.findById(gameId)
+                .flatMap(game -> gameRepository.delete(game))
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Juego no encontrado con ID: " + gameId)));
     }
 }
