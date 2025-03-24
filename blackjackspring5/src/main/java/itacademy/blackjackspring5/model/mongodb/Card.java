@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @Document(collection= "Cards")
 public class Card {
     private Suit suit;
@@ -22,11 +23,6 @@ public class Card {
 
     public String toSplitString() {
         return this.rank.name() + "-" + this.suit.name();
-    }
-
-    public Card(Suit suit, Rank rank) {
-        this.suit = suit;
-        this.rank = rank;
     }
 
     @Override

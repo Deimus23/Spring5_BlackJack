@@ -1,11 +1,11 @@
 package itacademy.blackjackspring5.service;
 
 import itacademy.blackjackspring5.model.mongodb.Game;
-import itacademy.blackjackspring5.model.mongodb.enums.GameStatus;
 import itacademy.blackjackspring5.model.mongodb.Card;
 import itacademy.blackjackspring5.model.mongodb.enums.GameResult;
-import itacademy.blackjackspring5.model.mongodb.enums.Suit;
+import itacademy.blackjackspring5.model.mongodb.enums.GameStatus;
 import itacademy.blackjackspring5.model.mongodb.enums.Rank;
+import itacademy.blackjackspring5.model.mongodb.enums.Suit;
 import itacademy.blackjackspring5.repository.mongodb.GameRepository;
 import itacademy.blackjackspring5.util.DeckUtils;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +14,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static itacademy.blackjackspring5.model.mongodb.enums.Suit.HIDDEN;
 
 @Service
 @RequiredArgsConstructor
@@ -30,10 +28,9 @@ public class GameService {
                     List<Card> deck = DeckUtils.createShuffledDeck();
                     Game game = new Game();
                     game.setPlayerId(player.getName());
-
                     game.setPlayerHand(drawInitialCards(deck));
                     game.setDealerHand(drawDealerInitialCards(deck));
-                    game.setDeck(DeckUtils.serializeDeck(deck));
+                    game.setDeck(deck);
                     game.setPlayerScore(calculateHandValue(game.getPlayerHand()));
 
                     if (game.getPlayerScore() == 21) {
@@ -53,7 +50,7 @@ public class GameService {
                         return Mono.error(new IllegalStateException("La partida ya ha terminado"));
                     }
 
-                    List<Card> deck = DeckUtils.deserializeDeck(game.getDeck());
+                    List<Card> deck = game.getDeck();
                     if (deck.isEmpty()) {
                         return Mono.error(new IllegalStateException("No hay cartas en el mazo"));
                     }
@@ -64,7 +61,7 @@ public class GameService {
 
                     game.setPlayerHand(newHand);
                     game.setPlayerScore(calculateHandValue(newHand));
-                    game.setDeck(DeckUtils.serializeDeck(deck));
+                    game.setDeck(deck);
 
                     if (game.getPlayerScore() > 21) {
                         endGame(game, GameResult.LOSE);
@@ -77,10 +74,9 @@ public class GameService {
     public Mono<Game> stand(String gameId) {
         return gameRepository.findById(gameId)
                 .flatMap(game -> {
-                    List<Card> deck = DeckUtils.deserializeDeck(game.getDeck());
+                    List<Card> deck = game.getDeck();
                     List<Card> dealerHand = new ArrayList<>(game.getDealerHand());
 
-                    // Revelar la carta oculta (sustituye la "HIDDEN" por una real)
                     dealerHand.set(1, deck.remove(0));
 
                     while (calculateHandValue(dealerHand) < 17 && !deck.isEmpty()) {
@@ -88,7 +84,7 @@ public class GameService {
                     }
 
                     game.setDealerHand(dealerHand);
-                    game.setDeck(DeckUtils.serializeDeck(deck));
+                    game.setDeck(deck);
 
                     int dealerScore = calculateHandValue(dealerHand);
                     int playerScore = game.getPlayerScore();
@@ -108,16 +104,13 @@ public class GameService {
     }
 
     private List<Card> drawInitialCards(List<Card> deck) {
-        return List.of(
-                deck.remove(0),
-                deck.remove(0)
-        );
+        return List.of(deck.remove(0), deck.remove(0));
     }
 
     private List<Card> drawDealerInitialCards(List<Card> deck) {
         List<Card> dealerHand = new ArrayList<>();
         dealerHand.add(deck.remove(0));
-        dealerHand.add(new Card(Suit.HIDDEN,Rank.HIDDEN));
+        dealerHand.add(new Card(Suit.HIDDEN, Rank.HIDDEN));
         return dealerHand;
     }
 
@@ -126,12 +119,11 @@ public class GameService {
         int aces = 0;
 
         for (Card card : hand) {
-            if (card.getRank().equals("HIDDEN")) continue;
+            if (card.getRank() == Rank.HIDDEN) continue;
 
-            String rank = String.valueOf(card.getRank());
-            int value = Rank.valueOf(rank).getValue();
+            int value = card.getRank().getValue();
             total += value;
-            if (rank.equals("ACE")) aces++;
+            if (card.getRank() == Rank.ACE) aces++;
         }
 
         while (total > 21 && aces > 0) {

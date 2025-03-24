@@ -34,11 +34,11 @@ public class PlayerService {
                 .switchIfEmpty(Mono.error(new RuntimeException("Jugador no encontrado")));
     }
 
-    public Flux<Player> getRanking() {
+  /*  public Flux<Player> getRanking() {
         return playerRepository.findAllByOrderByRankingPointsDesc()
                 .onErrorResume(e -> Flux.error(new RuntimeException("Error al obtener ranking")));
     }
-
+-*/
     public Mono<Player> updatePlayerStats(String playerId, boolean won) {
         return playerRepository.findByName(playerId)
                 .flatMap(player -> {
