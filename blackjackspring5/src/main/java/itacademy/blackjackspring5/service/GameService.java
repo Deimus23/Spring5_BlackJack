@@ -23,15 +23,19 @@ public class GameService {
     private final PlayerService playerService;
 
     public Mono<Game> createGame(String playerName) {
+
         return playerService.createOrUpdatePlayer(playerName)
                 .flatMap(player -> {
+
                     List<Card> deck = DeckUtils.createShuffledDeck();
                     Game game = new Game();
-                    game.setPlayerId(player.getName());
+                    game.setPlayerId(player.getId());
                     game.setPlayerHand(drawInitialCards(deck));
                     game.setDealerHand(drawDealerInitialCards(deck));
                     game.setDeck(deck);
                     game.setPlayerScore(calculateHandValue(game.getPlayerHand()));
+
+
 
                     if (game.getPlayerScore() == 21) {
                         game.setStatus(GameStatus.FINISHED);

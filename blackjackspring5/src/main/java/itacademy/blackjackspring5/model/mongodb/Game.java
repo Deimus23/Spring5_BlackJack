@@ -19,8 +19,8 @@ public class Game {
 
 
     @Id
-    private String id;
-    private String playerId;
+    private Long  id;
+    private Long playerId;
     private List<Card> deck;
     private List<Card> playerHand;
     private List<Card> dealerHand;
