@@ -103,7 +103,7 @@ public class GameService {
     private void endGame(Game game, GameResult result) {
         game.setStatus(GameStatus.FINISHED);
         game.setResult(result);
-        playerService.updatePlayerStats(game.getPlayerId(), result == GameResult.WIN)
+        playerService.updatePlayerStats(game.getPlayerId().toString(), result == GameResult.WIN)
                 .subscribe();
     }
 
