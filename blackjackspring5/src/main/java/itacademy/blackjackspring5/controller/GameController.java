@@ -23,8 +23,9 @@ import java.util.Map;
 @Tag(name = "Game Controller", description = "Gestión de partidas de Blackjack")
 public class GameController {
 
+
     private final GameService gameService;
-    @Autowired
+
     public GameController(GameService gameService) {
         this.gameService = gameService;
     }
@@ -41,8 +42,10 @@ public class GameController {
     )
     public Mono<Game> createGame(
             @Parameter(description = "Nombre del jugador", required = true, example = "Alice")
-            @RequestParam String playerName) {
-        return gameService.createGame(playerName);
+            @RequestParam String playerName,
+            @Parameter(description= "Apuesta del jugador", required= true , example="12" )
+            @RequestParam int playerBet) {
+        return gameService.createGame(playerName,playerBet);
     }
 
     @GetMapping("/deck")

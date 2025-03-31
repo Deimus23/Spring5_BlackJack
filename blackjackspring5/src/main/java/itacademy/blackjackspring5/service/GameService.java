@@ -2,7 +2,6 @@ package itacademy.blackjackspring5.service;
 
 import itacademy.blackjackspring5.model.mongodb.Game;
 import itacademy.blackjackspring5.model.mongodb.Card;
-import itacademy.blackjackspring5.model.mongodb.enums.GameResult;
 import itacademy.blackjackspring5.model.mongodb.enums.GameStatus;
 import itacademy.blackjackspring5.model.mongodb.enums.Rank;
 import itacademy.blackjackspring5.model.mongodb.enums.Suit;
@@ -19,10 +18,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GameService {
 
+
     private final GameRepository gameRepository;
     private final PlayerService playerService;
 
-    public Mono<Game> createGame(String playerName) {
+    public Mono<Game> createGame(String playerName,int playerBet) {
 
         return playerService.createOrUpdatePlayer(playerName)
                 .flatMap(player -> {
@@ -30,6 +30,7 @@ public class GameService {
                     List<Card> deck = DeckUtils.createShuffledDeck();
                     Game game = new Game();
                     game.setPlayerId(player.getId());
+                    game.setPlayerBet(playerBet);
                     game.setPlayerHand(drawInitialCards(deck));
                     game.setDealerHand(drawDealerInitialCards(deck));
                     game.setDeck(deck);
@@ -38,8 +39,7 @@ public class GameService {
 
 
                     if (game.getPlayerScore() == 21) {
-                        game.setStatus(GameStatus.FINISHED);
-                        game.setResult(GameResult.WIN);
+                        endGame(game,playerBet);
                         playerService.updatePlayerStats(player.getName(), true);
                     }
 
@@ -50,7 +50,7 @@ public class GameService {
     public Mono<Game> hit(String gameId) {
         return gameRepository.findById(gameId)
                 .flatMap(game -> {
-                    if (game.getStatus() == GameStatus.FINISHED) {
+                    if (game.getStatus() != GameStatus.IN_PROGRES) {
                         return Mono.error(new IllegalStateException("La partida ya ha terminado"));
                     }
 
@@ -59,16 +59,17 @@ public class GameService {
                         return Mono.error(new IllegalStateException("No hay cartas en el mazo"));
                     }
 
-                    Card drawnCard = deck.remove(0);
+                    Card drawnCard = deck.removeFirst();
                     List<Card> newHand = new ArrayList<>(game.getPlayerHand());
                     newHand.add(drawnCard);
 
                     game.setPlayerHand(newHand);
                     game.setPlayerScore(calculateHandValue(newHand));
                     game.setDeck(deck);
-
+                   int bet= game.getPlayerBet();
+//TODO:
                     if (game.getPlayerScore() > 21) {
-                        endGame(game, GameResult.LOSE);
+                        endGame(game,bet);
                     }
 
                     return gameRepository.save(game);
@@ -89,21 +90,28 @@ public class GameService {
 
                     game.setDealerHand(dealerHand);
                     game.setDeck(deck);
-
-                    int dealerScore = calculateHandValue(dealerHand);
-                    int playerScore = game.getPlayerScore();
-
-                    GameResult result = determineResult(playerScore, dealerScore);
-                    endGame(game, result);
+                    int bet= game.getPlayerBet();
+                    endGame(game,bet);
 
                     return gameRepository.save(game);
                 });
     }
 
-    private void endGame(Game game, GameResult result) {
-        game.setStatus(GameStatus.FINISHED);
-        game.setResult(result);
-        playerService.updatePlayerStats(game.getPlayerId().toString(), result == GameResult.WIN)
+    private void endGame(Game game,int bet) {
+        game.setStatus(determinateStatus(game.getPlayerScore(),calculateHandValue(game.getDealerHand())));
+        boolean win=false;
+        if(game.getStatus()==GameStatus.WIN){
+            String result ="Has ganado: "+bet*2;
+            game.setResult(result);
+             win= true;
+        } else if (game.getStatus()==GameStatus.LOSE) {
+            String result="Has palmado:" +(0-bet);
+            game.setResult(result);
+        }else {
+            String result="Empate , te quedas con :"+bet;
+            game.setResult(result);
+        }
+        playerService.updatePlayerStats(game.getPlayerId().toString(),win)
                 .subscribe();
     }
 
@@ -137,12 +145,12 @@ public class GameService {
         return total;
     }
 
-    private GameResult determineResult(int playerScore, int dealerScore) {
-        if (playerScore > 21) return GameResult.LOSE;
-        if (dealerScore > 21) return GameResult.WIN;
-        if (playerScore > dealerScore) return GameResult.WIN;
-        if (playerScore < dealerScore) return GameResult.LOSE;
-        return GameResult.DRAW;
+    private GameStatus determinateStatus(int playerScore, int dealerScore) {
+        if (playerScore > 21) return GameStatus.LOSE;
+        if (dealerScore > 21) return GameStatus.WIN;
+        if (playerScore > dealerScore) return GameStatus.WIN;
+        if (playerScore < dealerScore) return GameStatus.LOSE;
+        return GameStatus.DRAW;
     }
 
     public Mono<Game> getGame(String gameId) {

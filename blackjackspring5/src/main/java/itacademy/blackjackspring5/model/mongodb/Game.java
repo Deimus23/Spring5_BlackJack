@@ -1,12 +1,14 @@
 package itacademy.blackjackspring5.model.mongodb;
 
-import itacademy.blackjackspring5.model.mongodb.enums.GameResult;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import itacademy.blackjackspring5.model.mongodb.enums.GameStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.Instant;
 import java.util.Date;
@@ -19,13 +21,15 @@ public class Game {
 
 
     @Id
-    private Long  id;
+    @MongoId
+    private String  id;
     private Long playerId;
+    private int playerBet;
     private List<Card> deck;
     private List<Card> playerHand;
     private List<Card> dealerHand;
     private int playerScore;
-    private GameStatus status;
-    private GameResult result;
+    private GameStatus status= GameStatus.IN_PROGRES;
+    private String result;
     private Date timestamp= Date.from(Instant.now());
 }

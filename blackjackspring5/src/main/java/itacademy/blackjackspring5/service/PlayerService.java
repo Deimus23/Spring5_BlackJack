@@ -4,6 +4,7 @@ import itacademy.blackjackspring5.model.mysql.Player;
 
 import itacademy.blackjackspring5.repository.mysql.PlayerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -12,10 +13,11 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class PlayerService {
 
-    private final PlayerRepository playerRepository;
+    @Autowired
+    private PlayerRepository playerRepository;
 
     public Mono<Player> createOrUpdatePlayer(String name) {
-        return playerRepository.findByName(name)
+        return playerRepository.findFirstByName(name)
                 .flatMap(existingPlayer -> {
                     existingPlayer.setGamesPlayed(existingPlayer.getGamesPlayed() + 1);
                     return playerRepository.save(existingPlayer);
@@ -34,13 +36,13 @@ public class PlayerService {
                 .switchIfEmpty(Mono.error(new RuntimeException("Jugador no encontrado")));
     }
 
-  /*  public Flux<Player> getRanking() {
-        return playerRepository.findAllByOrderByRankingPointsDesc()
-                .onErrorResume(e -> Flux.error(new RuntimeException("Error al obtener ranking")));
+    public Flux<Player> getRanking() {
+        return playerRepository.findAllByOrderByScoreDesc()
+                .onErrorResume(e -> Flux.error(new RuntimeException("Error al obtener ranking", e)));
     }
--*/
+
     public Mono<Player> updatePlayerStats(String playerId, boolean won) {
-        return playerRepository.findByName(playerId)
+        return playerRepository.findFirstByName(playerId)
                 .flatMap(player -> {
                     player.setGamesPlayed(player.getGamesPlayed() + 1);
                     if (won) {
