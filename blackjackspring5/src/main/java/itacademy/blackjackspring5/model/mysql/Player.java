@@ -23,8 +23,8 @@ public class Player {
     @Column("games_played")
     private int gamesPlayed;
 
-    @Column("games_won")
-    private int gamesWon;
+    @Column("score")
+    private int score;
 
     @Column("ranking_points")
     private int rankingPoints;

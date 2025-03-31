@@ -46,7 +46,7 @@ public class PlayerService {
                 .flatMap(player -> {
                     player.setGamesPlayed(player.getGamesPlayed() + 1);
                     if (won) {
-                        player.setGamesWon(player.getGamesWon() + 1);
+                        player.setScore(player.getScore() + 1);
                         player.setRankingPoints(player.getRankingPoints() + 10);
                     }
                     return playerRepository.save(player);

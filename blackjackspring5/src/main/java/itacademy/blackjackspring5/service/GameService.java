@@ -67,7 +67,6 @@ public class GameService {
                     game.setPlayerScore(calculateHandValue(newHand));
                     game.setDeck(deck);
                    int bet= game.getPlayerBet();
-//TODO:
                     if (game.getPlayerScore() > 21) {
                         endGame(game,bet);
                     }
