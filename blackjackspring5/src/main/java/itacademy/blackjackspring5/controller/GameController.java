@@ -1,11 +1,8 @@
 package itacademy.blackjackspring5.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import itacademy.blackjackspring5.model.mongodb.Card;
 import itacademy.blackjackspring5.model.mongodb.Game;
 import itacademy.blackjackspring5.service.GameService;
-import itacademy.blackjackspring5.util.DeckUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,9 +10,6 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import reactor.core.publisher.Mono;
-
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -46,11 +40,6 @@ public class GameController {
             @Parameter(description= "Apuesta del jugador", required= true , example="12" )
             @RequestParam int playerBet) {
         return gameService.createGame(playerName,playerBet);
-    }
-
-    @GetMapping("/deck")
-    public List<Card> getShuffledDeck() {
-        return DeckUtils.createShuffledDeck();
     }
 
     @GetMapping("/{id}")
@@ -115,33 +104,11 @@ public class GameController {
         return gameService.deleteGame(id);
     }
 
-    @GetMapping("/{id}/deck")
-    @Operation(
-            summary = "Ver mazo restante",
-            description = "Muestra las cartas restantes en el mazo (para debug)",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Info del mazo"),
-                    @ApiResponse(responseCode = "404", description = "Partida no encontrada")
-            }
-    )
+
     public Mono<Map<String, Object>> getDeck(
             @Parameter(description = "ID de la partida", required = true)
             @PathVariable String id) {
-
-        return gameService.getGame(id)
-                .flatMap(game -> {
-                    List<Card> deck = game.getDeck();
-                    Map<String, Object> response = new LinkedHashMap<>();
-                    response.put("remaining_cards", deck.size());
-                    List<String> formattedCards = deck.stream()
-                            .map(Card::toString)
-                            .toList();
-                    response.put("cards", formattedCards);
-                    return Mono.just(response);
-                })
-                .onErrorResume(IllegalArgumentException.class, e ->
-                        Mono.just(Map.of("error", e.getMessage()))
-                );
+            return gameService.getDeck(id);
     }
 }
 
